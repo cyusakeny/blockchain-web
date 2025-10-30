@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
+import { ethers } from "ethers";
 import { getContract } from "../lib/contract";
+import contractABI from "../contractABI.json";
 
 export default function Home() {
   const [hashes, setHashes] = useState([]);
@@ -11,6 +13,48 @@ export default function Home() {
   const [newOwner, setNewOwner] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [events, setEvents] = useState([]);
+  const [networkName, setNetworkName] = useState("Checking network...");
+
+    // ✅ Detect and enforce correct network
+  useEffect(() => {
+    const checkNetwork = async () => {
+      if (!window.ethereum) {
+        setNetworkName("❌ MetaMask not found");
+        return;
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+
+      if (network.chainId === 11155111) {
+        setNetworkName("🟢 Sepolia Testnet");
+      } else {
+        setNetworkName("🔴 Wrong Network (Switching...)");
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }], // Hex for 11155111
+        });
+        setNetworkName("🟢 Sepolia Testnet");
+      }
+
+      // React to live network changes
+      window.ethereum.on("chainChanged", (chainId) => {
+        const id = parseInt(chainId, 16);
+        if (id === 11155111) {
+          setNetworkName("🟢 Sepolia Testnet");
+        } else if (id === 1) {
+          setNetworkName("🔴 Ethereum Mainnet");
+        } else {
+          setNetworkName(`🔴 Unknown Network (${id})`);
+        }
+        window.location.reload(); // ensures provider updates
+      });
+    };
+
+    checkNetwork();
+  }, []);
+
 
   // ✅ Fetch all asset hashes
   const fetchMyAssetHashes = async () => {
@@ -122,9 +166,81 @@ export default function Home() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+  let contract;
+  let listenersSet = false;
+
+  const setupEventListeners = async () => {
+
+    if (listenersSet) return; // ✅ Prevent duplicate listeners
+    listenersSet = true;
+
+    if (!window.ethereum) return;
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contractAddress = "0x39e9C1a2d8C5Ae92B98f4250a7679BDAFF4345dC"; // 👈 use your deployed address
+    contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+    // 🟢 Listen for AssetRegistered
+    contract.on("AssetRegistered", (idHash, owner, name, cost, event) => {
+      console.log("📦 New asset registered:", { idHash, owner, name, cost });
+
+      setEvents((prev) => [
+        {
+          type: "Registered",
+          idHash,
+          owner,
+          name,
+          cost: cost.toString(),
+          timestamp: new Date().toLocaleString(),
+        },
+        ...prev,
+      ]);
+    });
+
+    // 🟡 Listen for AssetTransferred
+    contract.on("AssetTransferred", (idHash, prevOwner, newOwner, event) => {
+      console.log("🔁 Asset transferred:", { idHash, prevOwner, newOwner });
+
+      setEvents((prev) => [
+        {
+          type: "Transferred",
+          idHash,
+          prevOwner,
+          newOwner,
+          timestamp: new Date().toLocaleString(),
+        },
+        ...prev,
+      ]);
+    });
+  };
+
+  setupEventListeners();
+
+  return () => {
+    if (contract) {
+      contract.removeAllListeners();
+    }
+  };
+}, []);
 
   return (
     <div style={{ textAlign: "center", marginTop: 40, marginBottom: 100 }}>
+ {/* --- Network indicator --- */}
+      <div
+        style={{
+          background: "#f0f0f0",
+          padding: "10px",
+          borderRadius: "8px",
+          width: "fit-content",
+          margin: "auto",
+          marginBottom: "20px",
+        }}
+      >
+        <b>Network:</b> {networkName}
+      </div>
+      
       <h1>🧾 AutoHash Asset Registry</h1>
 
       {/* --- Register Asset --- */}
@@ -310,6 +426,67 @@ export default function Home() {
           {loading ? "⏳ Transferring..." : "Transfer Ownership"}
         </button>
       </section>
+      {/* --- Event Logs --- */}
+      {/* --- Live Event Feed --- */}
+<section
+  style={{
+    marginTop: 40,
+    background: "#f0f0f0",
+    padding: 20,
+    borderRadius: 10,
+    width: "70%",
+    marginInline: "auto",
+    textAlign: "left",
+  }}
+>
+  <h2>📊 Live Event Feed</h2>
+  {events.length === 0 && <p>No events yet. Interact with the contract!</p>}
+  <ul style={{ listStyle: "none", padding: 0 }}>
+    {events.map((e, i) => (
+      <li
+        key={i}
+        style={{
+          background: e.type === "Registered" ? "#d4edda" : "#fff3cd",
+          borderLeft:
+            e.type === "Registered"
+              ? "4px solid #28a745"
+              : "4px solid #ffc107",
+          margin: "10px 0",
+          padding: "10px",
+          borderRadius: "8px",
+        }}
+      >
+        <p>
+          <b>{e.type}</b> — {e.timestamp}
+        </p>
+        <p>
+          <b>Hash:</b> {e.idHash}
+        </p>
+        {e.type === "Registered" && (
+          <>
+            <p>
+              <b>Owner:</b> {e.owner}
+            </p>
+            <p>
+              <b>Name:</b> {e.name} — <b>Cost:</b> {e.cost}
+            </p>
+          </>
+        )}
+        {e.type === "Transferred" && (
+          <>
+            <p>
+              <b>From:</b> {e.prevOwner}
+            </p>
+            <p>
+              <b>To:</b> {e.newOwner}
+            </p>
+          </>
+        )}
+      </li>
+    ))}
+  </ul>
+</section>
+
     </div>
   );
 }
