@@ -96,6 +96,6 @@ The contract only works on Sepolia. Attempting to use it on another network will
 - 💰 Requires SepoliaETH
 You need Sepolia test ETH for registering or transferring assets.
 You can get it from the official faucet linked above.
-[text](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+[link](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
 - 🧹 Local Event Persistence
 The event feed resets after page reload (use localStorage for persistent logs if needed).
