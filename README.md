@@ -1,40 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# 🧾 AutoHash Asset Registry (Ethereum DApp)
 
-## Getting Started
+This decentralized application (dApp) allows users to **register, view, and transfer digital assets** on the Ethereum blockchain.  
+Each asset is automatically assigned a **unique hash ID**, ensuring authenticity, transparency, and traceability.  
 
-First, run the development server:
+The frontend is built with **Next.js (React)** and connected to an **Ethereum smart contract** written in Solidity using **ethers.js**.
 
+---
+
+## 🚀 Features
+
+- ✅ Register new digital assets (auto-hashed IDs)
+- ✅ Fetch and view all asset hashes owned by a wallet
+- ✅ View detailed asset information by hash
+- ✅ Transfer asset ownership between wallet addresses
+- ✅ Real-time event feed (📊 logs of all blockchain activity)
+- ✅ Automatic network detection (Sepolia)
+- ✅ Live monitoring of contract events (`AssetRegistered`, `AssetTransferred`)
+
+---
+
+## 🧠 Smart Contract Overview
+
+### Contract Name
+`AutoHashAssetRegistry.sol`
+
+### Main Functions
+| Function | Description |
+|-----------|-------------|
+| `registerAsset(string name, uint256 cost)` | Registers a new asset and generates a unique hash |
+| `transferAsset(bytes32 idHash, address newOwner)` | Transfers ownership of an asset |
+| `getAsset(bytes32 idHash)` | Retrieves details of a specific asset |
+| `getAssetsOf(address ownerAddr)` | Returns a list of asset hashes owned by an address |
+
+### Events
+| Event | Description |
+|--------|-------------|
+| `AssetRegistered(bytes32 idHash, address owner, string name, uint256 cost)` | Triggered when an asset is registered |
+| `AssetTransferred(bytes32 idHash, address prevOwner, address newOwner)` | Triggered when ownership changes |
+
+---
+
+## 🧰 Software Environment & Tools
+
+| Tool / Library | Version / Network | Description |
+|-----------------|------------------|--------------|
+| **Solidity** | `^0.8.19` | Smart contract programming language |
+| **Ethereum Testnet** | `Sepolia (chainId: 11155111)` | Network for testing transactions |
+| **Next.js** | `14+` | React framework for frontend |
+| **ethers.js** | `6.15.0` | Library for blockchain interaction |
+| **MetaMask** | Latest | Browser wallet for interacting with Ethereum |
+| **Remix IDE** | Latest | Used for compiling and deploying the contract |
+
+
+## ⚙️ Project Setup
+
+### 1️⃣ Clone the Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/cyusakeny/blockchain-web.git
+cd blockchain-web
+ ```
+### 2 install dependencies
+```bash
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3 Run project 
+```bash
+npm run dev
+```
+Before running the app, make sure you have MetaMask installed and connected to the Sepolia Test Network 
+with a small amount of SepoliaETH for gas fees.
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+### 🧩 How to Use
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+- Connect MetaMask to Sepolia Test Network
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+- Register Asset — enter name and cost, confirm transaction
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Fetch My Asset Hashes — view all your asset IDs
 
-## Learn More
+- View Details — click 🔍 to see asset info (owner, cost, time)
 
-To learn more about Next.js, take a look at the following resources:
+- Transfer Ownership — enter asset hash + new owner address
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+- Watch the Event Feed update live with blockchain actions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Known Issues / Limitations
 
-## Deploy on Vercel
+- ⚙️ Event Duplication in Dev Mode
+duplicated event logs to show live transactions happening on the network
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 🧾 Sepolia Network Dependency
+The contract only works on Sepolia. Attempting to use it on another network will show a "Wrong Network" warning.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+- 💰 Requires SepoliaETH
+You need Sepolia test ETH for registering or transferring assets.
+You can get it from the official faucet linked above.
+[text](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+- 🧹 Local Event Persistence
+The event feed resets after page reload (use localStorage for persistent logs if needed).
